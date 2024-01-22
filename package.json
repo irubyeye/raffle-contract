@@ -15,12 +15,19 @@
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.5",
     "chai": "^4.2.0",
-    "ethers": "^6.4.0",
+    "ethers": "^6.10.0",
     "hardhat": "^2.19.4",
     "hardhat-gas-reporter": "^1.0.8",
     "solidity-coverage": "^0.8.0",
     "ts-node": "^10.9.2",
     "typechain": "^8.3.0",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^0.8.0",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@openzeppelin/contracts": "^5.0.1",
+    "@openzeppelin/hardhat-upgrades": "^3.0.2",
+    "dotenv": "^16.3.2"
   }
 }

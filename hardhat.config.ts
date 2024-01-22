@@ -4,7 +4,7 @@ require("dotenv").config();
 
 const INFURA_API_KEY: string = process.env.INFURA_API_KEY || "";
 const SEPOLIA_PRIVATE_KEY: string = process.env.SEPOLIA_PRIVATE_KEY || "";
-const ALCHEMY_API_KEY: string = proces.env.ALCHEMY_API_KEY || "";
+const ALCHEMY_API_KEY: string = process.env.ALCHEMY_API_KEY || "";
 const COVERAGE = process.env.COVERAGE === "true";
 
 if (COVERAGE) {
@@ -15,7 +15,13 @@ require("./tasks/deploy");
 
 module.exports = {
   defaultNetwork: "hardhat",
-  solidity: "0.8.23",
+  solidity: {
+    compilers: [
+      { version: "0.8.23" },
+      { version: "0.4.17" },
+      { version: "0.5.16" },
+    ],
+  },
   networks: {
     sepolia: {
       url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
