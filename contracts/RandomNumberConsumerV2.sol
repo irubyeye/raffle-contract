@@ -15,10 +15,13 @@ contract RandomNumberConsumerV2 is VRFConsumerBaseV2 {
 
     uint16 constant REQUEST_CONFIRMATIONS = 3;
 
-    uint32 public constant NUM_WORDS = 2;
+    uint32 public constant NUM_WORDS = 1;
 
     uint256[] public s_randomWords;
+
     uint256 public s_requestId;
+    uint256 public randomNumber;
+
     address s_owner;
 
     event ReturnedRandomness(uint256[] randomWords);
@@ -35,7 +38,6 @@ contract RandomNumberConsumerV2 is VRFConsumerBaseV2 {
     }
 
     function requestRandomWords() external onlyOwner {
-        // Will revert if subscription is not set and funded.
         s_requestId = COORDINATOR.requestRandomWords(
             i_keyHash,
             i_subscriptionId,
@@ -50,6 +52,8 @@ contract RandomNumberConsumerV2 is VRFConsumerBaseV2 {
         uint256[] memory randomWords
     ) internal override {
         s_randomWords = randomWords;
+        randomNumber = s_randomWords[0];
+
         emit ReturnedRandomness(randomWords);
     }
 

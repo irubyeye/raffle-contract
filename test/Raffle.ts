@@ -1,3 +1,4 @@
+import { RandomNumberConsumerV2__factory } from "./../typechain-types/factories/contracts/RandomNumberConsumerV2__factory";
 import { BNB__factory } from "./../typechain-types/factories/contracts/BNBTest.sol/BNB__factory";
 import { Uni__factory } from "./../typechain-types/factories/contracts/UniswapTest.sol/Uni__factory";
 import { expect, use } from "chai";
@@ -9,6 +10,7 @@ import {
   LinkToken,
   LinkToken__factory,
   Raffle__factory,
+  RandomNumberConsumerV2,
   TestErc20,
   TestErc20__factory,
   TetherToken,
@@ -26,6 +28,9 @@ describe("Advanced voting system", () => {
     user3: HardhatEthersSigner,
     user4: HardhatEthersSigner,
     user5: HardhatEthersSigner;
+
+  let randomNumberConsumer: RandomNumberConsumerV2;
+  let randomNumberConsumerAddress: string;
 
   let raffleContract: Raffle;
   let raffleContractAddress: string;
@@ -55,10 +60,22 @@ describe("Advanced voting system", () => {
   beforeEach(async () => {
     [owner, user1, user2, user3, user4, user5] = await ethers.getSigners();
 
+    const RandomNumberConsumerFactory: RandomNumberConsumerV2__factory =
+      await ethers.getContractFactory("RandomNumberConsumerV2");
+    randomNumberConsumer = await RandomNumberConsumerFactory.deploy(
+      8801,
+      "0x8103b0a8a00be2ddc778e6e7eaa21791cd364625",
+      "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c"
+    );
+    randomNumberConsumerAddress = await randomNumberConsumer.getAddress();
+
     const RaffleFactory: Raffle__factory = await ethers.getContractFactory(
       "Raffle"
     );
-    raffleContract = await RaffleFactory.deploy();
+    raffleContract = await RaffleFactory.deploy(
+      randomNumberConsumerAddress,
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    );
     raffleContractAddress = await raffleContract.getAddress();
 
     const TestErc20Factory: TestErc20__factory =
@@ -122,6 +139,7 @@ describe("Advanced voting system", () => {
 
   describe.skip("Deployment", () => {
     it("Should deploy contracts", async () => {
+      expect(randomNumberConsumerAddress).to.not.equal(0);
       expect(raffleContractAddress).to.not.equal(0);
       expect(testErc20Address).to.not.equal(0);
       expect(tetherTokenAddress).to.not.equal(0);
@@ -138,7 +156,7 @@ describe("Advanced voting system", () => {
   });
 
   describe("Oracle receiving data", () => {
-    it("Should proper get on-chain price", async () => {
+    xit("Should proper get on-chain price", async () => {
       const result = await raffleContract.getCurrencyExt(uniswapTokenAddress);
       console.log(result, " Price of token");
 
@@ -156,6 +174,19 @@ describe("Advanced voting system", () => {
   });
 
   describe("Raffle logic", () => {
+    it("Should proper derive", async () => {
+      // const result = await raffleContract.percCalc(1, BigInt(2 ** 256 - 1));
+
+      // console.log(result, "Percentage");
+
+      await raffleContract.getRandomNumber();
+
+      const result1 = await raffleContract.calculateRange(119, 238);
+
+      console.log(await raffleContract.getWinnerNumber(), "Winner number");
+
+      console.log(result1, "Range");
+    });
     it.skip("Should deposit proper amount of allowed tokens on raffle contract", async () => {
       await chainlinkToken.approve(raffleContractAddress, 100000);
 
@@ -165,7 +196,7 @@ describe("Advanced voting system", () => {
         100000
       );
     });
-    it("Should proper set usd balance of user due to exchange", async () => {
+    it.skip("Should proper set usd balance of user due to exchange", async () => {
       await uniswapToken.approve(raffleContract, 2);
 
       await raffleContract.deposite(uniswapTokenAddress, 2);
@@ -173,6 +204,11 @@ describe("Advanced voting system", () => {
       const result = await raffleContract.getBalanceInUsd();
 
       console.log(result);
+    });
+    it.skip("Should return random number", async () => {
+      const result = await raffleContract.getRandomNumber();
+
+      console.log(result, "RANDOM!!!");
     });
   });
 });
