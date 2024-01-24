@@ -27,11 +27,11 @@ module.exports = {
       url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
       accounts: [SEPOLIA_PRIVATE_KEY],
     },
-    // hardhat: {
-    //   forking: {
-    //     url: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-    //   },
-    // },
+    hardhat: {
+      forking: {
+        url: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+      },
+    },
   },
   gasReporter: {
     enabled: false,

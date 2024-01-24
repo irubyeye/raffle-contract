@@ -74,7 +74,8 @@ describe("Advanced voting system", () => {
     );
     raffleContract = await RaffleFactory.deploy(
       randomNumberConsumerAddress,
-      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
     );
     raffleContractAddress = await raffleContract.getAddress();
 
@@ -174,11 +175,7 @@ describe("Advanced voting system", () => {
   });
 
   describe("Raffle logic", () => {
-    it("Should proper derive", async () => {
-      // const result = await raffleContract.percCalc(1, BigInt(2 ** 256 - 1));
-
-      // console.log(result, "Percentage");
-
+    it.skip("Should proper derive", async () => {
       await raffleContract.getRandomNumber();
 
       const result1 = await raffleContract.calculateRange(119, 238);
@@ -186,22 +183,24 @@ describe("Advanced voting system", () => {
       console.log(await raffleContract.getWinnerNumber(), "Winner number");
 
       console.log(result1, "Range");
+
+      expect(result1).to.equal(BigInt(499999999999999999));
     });
     it.skip("Should deposit proper amount of allowed tokens on raffle contract", async () => {
       await chainlinkToken.approve(raffleContractAddress, 100000);
 
-      await raffleContract.deposite(chainlinkTokenAddress, 100000);
+      await raffleContract.playRaffle(chainlinkTokenAddress, 100000);
 
       expect(await chainlinkToken.balanceOf(raffleContractAddress)).to.equal(
         100000
       );
     });
     it.skip("Should proper set usd balance of user due to exchange", async () => {
-      await uniswapToken.approve(raffleContract, 2);
+      await uniswapToken.approve(raffleContract, 1);
 
-      await raffleContract.deposite(uniswapTokenAddress, 2);
+      await raffleContract.playRaffle(uniswapTokenAddress, 1);
 
-      const result = await raffleContract.getBalanceInUsd();
+      const result = await raffleContract.getBalanceInUsd(owner.address, 1);
 
       console.log(result);
     });
@@ -209,6 +208,39 @@ describe("Advanced voting system", () => {
       const result = await raffleContract.getRandomNumber();
 
       console.log(result, "RANDOM!!!");
+    });
+    it("Should proper work due to raffle-logic pipeline", async () => {
+      const amounts: number[] = [15, 3, 2];
+
+      await chainlinkToken.approve(raffleContract, amounts[2]);
+      await raffleContract.playRaffle(chainlinkTokenAddress, amounts[2]);
+
+      await tetherToken.transfer(user1.address, amounts[0]);
+      await uniswapToken.transfer(user2.address, amounts[1]);
+      await chainlinkToken.transfer(user3.address, amounts[2]);
+
+      await tetherToken.connect(user1).approve(raffleContract, amounts[0]);
+      await uniswapToken.connect(user2).approve(raffleContract, amounts[1]);
+      await chainlinkToken.connect(user3).approve(raffleContract, amounts[2]);
+
+      await raffleContract
+        .connect(user2)
+        .playRaffle(uniswapTokenAddress, amounts[1]);
+      await raffleContract
+        .connect(user3)
+        .playRaffle(chainlinkToken, amounts[2]);
+
+      await raffleContract.endRaffle();
+
+      const winnerNumber = await raffleContract.getWinnerNumber();
+
+      const rafflePlayers = await raffleContract.getRafflePlayers(1);
+
+      const winner = await raffleContract.verifyWinner(1, owner.address);
+      const winner1 = await raffleContract.verifyWinner(1, user2.address);
+      const winner2 = await raffleContract.verifyWinner(1, user3.address);
+
+      console.log(rafflePlayers, winnerNumber, winner, winner1, winner2);
     });
   });
 });

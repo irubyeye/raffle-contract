@@ -51,10 +51,12 @@ contract Raffle is Ownable {
 
     constructor(
         RandomNumberConsumerV2 _consumer,
-        address _wethAddress
+        address _wethAddress,
+        address _uniSwapRouter
     ) Ownable(msg.sender) {
         randomNumberConsumer = _consumer;
         _weth = _wethAddress;
+        _router = IUniswapV2Router02(_uniSwapRouter);
     }
 
     modifier onlyAllowedTokens(address _token) {
@@ -89,6 +91,21 @@ contract Raffle is Ownable {
 
     function getCurrencyExt(address _token) public view returns (int) {
         return getCurrency(_token);
+    }
+
+    function getRafflePlayers(
+        uint256 _raffleId
+    ) external view returns (Player[] memory) {
+        return rafflePlayers[_raffleId];
+    }
+
+    function getBalanceInUsd(
+        address _player,
+        uint256 _raffleId
+    ) public view returns (uint256) {
+        return
+            rafflePlayers[_raffleId][userPosInRaffle[_player][raffleId]]
+                .playerBet;
     }
 
     function getTokenOracle(address _token) external view returns (address) {
@@ -134,13 +151,13 @@ contract Raffle is Ownable {
         path[0] = _token;
         path[1] = _weth;
 
-        uint256 amountInWeth = _router.swapExactTokensForTokens(
-            _amount,
-            0,
-            path,
-            address(this),
-            block.timestamp + 60
-        )[1];
+        // uint256 amountInWeth = _router.swapExactTokensForTokens(
+        //     _amount,
+        //     0,
+        //     path,
+        //     address(this),
+        //     block.timestamp + 60
+        // )[1];
 
         Player memory rafflePlayer;
         rafflePlayer.playerAddress = msg.sender;
@@ -152,19 +169,15 @@ contract Raffle is Ownable {
         rafflePlayers[_raffleId].push(rafflePlayer);
 
         rafflePot[_raffleId] += usdAmount;
-        rafflePotInWeth[_raffleId] += amountInWeth;
+        //rafflePotInWeth[_raffleId] += amountInWeth;
     }
 
-    function playRaffle(
-        address _token,
-        uint256 _amount,
-        uint256 _raffleId
-    ) external {
+    function playRaffle(address _token, uint256 _amount) external {
         if (!isRaffleInProcess[raffleId]) {
-            require(
-                IERC20(_weth).balanceOf(address(this)) == 0,
-                "Cannot start new raffle before previous winner hasn't receive pot!"
-            );
+            // require(
+            //     isPotTransfered[raffleId],
+            //     "Cannot start new raffle before previous winner hasn't receive pot!"
+            // );
 
             raffleId++;
             isRaffleInProcess[raffleId] = true;
@@ -173,13 +186,13 @@ contract Raffle is Ownable {
         require(isRaffleInProcess[raffleId], "This round has ended!");
 
         require(
-            isPlayed[msg.sender] != _raffleId,
+            isPlayed[msg.sender] != raffleId,
             "You have already joined this round!"
         );
 
-        deposite(_token, _amount, _raffleId);
+        deposite(_token, _amount, raffleId);
 
-        isPlayed[msg.sender] = _raffleId;
+        isPlayed[msg.sender] = raffleId;
     }
 
     function endRaffle() external onlyOwner {
@@ -239,7 +252,7 @@ contract Raffle is Ownable {
         ];
 
         require(
-            supposedWinnerParams.playerAddress != address(0),
+            supposedWinnerParams.playerAddress == _supposedWinner,
             "No such player in requested raffle!"
         );
 
@@ -263,12 +276,13 @@ contract Raffle is Ownable {
 
         uint256 checkedRaffleWinnerNumber = raffleWinnerNumber[_raffleId];
 
-        require(
+        if (
             checkedRaffleWinnerNumber > prevPlayersRange &&
-                checkedRaffleWinnerNumber < maxPlayerDiapason,
-            "Wrong player!"
-        );
-
-        return true;
+            checkedRaffleWinnerNumber < maxPlayerDiapason
+        ) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
