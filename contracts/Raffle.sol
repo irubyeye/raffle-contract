@@ -182,14 +182,51 @@ contract Raffle is Ownable {
     }
 
     function getLiquidity(
-        address _token,
+        address _tokenA,
+        address _tokenB,
         uint256 _amount
     ) public view returns (uint256[] memory) {
         address[] memory path = new address[](2);
-        path[0] = _token;
-        path[1] = _weth;
+        path[0] = _tokenA;
+        path[1] = _tokenB;
 
         return _router.getAmountsOut(_amount, path);
+    }
+
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 amountADesired,
+        uint256 amountBDesired,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline
+    ) external {
+        require(
+            IERC20(tokenA).allowance(msg.sender, address(this)) >=
+                amountADesired &&
+                IERC20(tokenB).allowance(msg.sender, address(this)) >=
+                amountBDesired,
+            "Approval failed"
+        );
+
+        IERC20(tokenA).transferFrom(msg.sender, address(this), amountADesired);
+        IERC20(tokenB).transferFrom(msg.sender, address(this), amountBDesired);
+
+        IERC20(tokenA).approve(uniswapRouterAddress, amountADesired);
+        IERC20(tokenB).approve(uniswapRouterAddress, amountBDesired);
+
+        _router.addLiquidity(
+            tokenA,
+            tokenB,
+            amountADesired,
+            amountBDesired,
+            amountAMin,
+            amountBMin,
+            to,
+            deadline
+        );
     }
 
     function playRaffle(address _token, uint256 _amount) external {

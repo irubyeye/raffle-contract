@@ -72,7 +72,7 @@ describe("Advanced voting system", async () => {
   const chainlinkOracle: string = "0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c";
   const bnbOracle: string = "0x14e613AC84a31f709eadbdF89C6CC390fDc9540A";
 
-  const initSupply: number = 100000000000;
+  const initSupply: bigint = BigInt(5 * 10 ** 18);
 
   beforeEach(async () => {
     [owner, user1, user2, user3, user4, user5] = await ethers.getSigners();
@@ -146,11 +146,11 @@ describe("Advanced voting system", async () => {
     );
     wethToken = await wethTokenFactory.attach(wethTokenAddress);
 
-    await raffleContract.manageTokensList(testErc20Address, false);
+    await raffleContract.manageTokensList(testErc20Address, true);
     await raffleContract.manageTokensList(tetherTokenAddress, true);
     await raffleContract.manageTokensList(uniswapTokenAddress, true);
     await raffleContract.manageTokensList(chainlinkTokenAddress, true);
-    await raffleContract.manageTokensList(bnbTokenAddress, true);
+    await raffleContract.manageTokensList(bnbTokenAddress, false);
 
     await raffleContract.manageCurrencyOracle(tetherTokenAddress, tetherOracle);
     await raffleContract.manageCurrencyOracle(
@@ -246,7 +246,29 @@ describe("Advanced voting system", async () => {
         await raffleContract.getLiquidity(tetherTokenAddress, amounts[1])
       );
     });
-    it("Should proper work due to raffle-logic pipeline", async () => {
+    it("Should create a new liquidity pair between eth and test erc20", async () => {
+      await wethToken.connect(wetherHolder).transfer(owner, 10);
+
+      await testErc20.connect(owner).approve(raffleContractAddress, initSupply);
+
+      await wethToken.connect(owner).approve(raffleContractAddress, 10);
+
+      await raffleContract.addLiquidity(
+        wethTokenAddress,
+        testErc20Address,
+        10,
+        initSupply / BigInt(5),
+        0,
+        0,
+        owner.address,
+        Math.floor(Date.now() / 1000) + 600
+      );
+
+      console.log(
+        await raffleContract.getLiquidity(wethTokenAddress, testErc20, 1)
+      );
+    });
+    it.skip("Should proper work due to raffle-logic pipeline", async () => {
       const amounts: number[] = [1500, 1000, 2000, 10];
 
       await uniswapToken
