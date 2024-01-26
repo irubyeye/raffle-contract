@@ -317,10 +317,10 @@ contract Uni {
         address minter_,
         uint mintingAllowedAfter_
     ) public {
-        // require(
-        //     mintingAllowedAfter_ >= block.timestamp,
-        //     "Uni::constructor: minting can only begin after deployment"
-        // );
+        require(
+            mintingAllowedAfter_ >= block.timestamp,
+            "Uni::constructor: minting can only begin after deployment"
+        );
 
         balances[account] = uint96(totalSupply);
         emit Transfer(address(0), account, totalSupply);

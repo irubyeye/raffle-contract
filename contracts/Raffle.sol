@@ -156,26 +156,40 @@ contract Raffle is Ownable {
 
         IERC20(_token).approve(uniswapRouterAddress, _amount);
 
+        uint256[] memory amountsOut = _router.getAmountsOut(_amount, path);
+
         uint256 amountInWeth = _router.swapExactTokensForTokens(
             _amount,
-            0,
+            amountsOut[amountsOut.length - 1],
             path,
             address(this),
             block.timestamp + 600
-        )[1];
+        )[amountsOut.length - 1];
 
         Player memory rafflePlayer;
         rafflePlayer.playerAddress = msg.sender;
         rafflePlayer.playerBet = usdAmount;
-        rafflePlayer.prevDepSum = rafflePot[raffleId];
+        rafflePlayer.prevDepSum = rafflePot[_raffleId];
 
-        userPosInRaffle[msg.sender][raffleId] = rafflePlayers[_raffleId].length;
+        userPosInRaffle[msg.sender][_raffleId] = rafflePlayers[_raffleId]
+            .length;
 
         rafflePlayers[_raffleId].push(rafflePlayer);
 
         rafflePot[_raffleId] += usdAmount;
 
         rafflePotInWeth[_raffleId] += amountInWeth;
+    }
+
+    function getLiquidity(
+        address _token,
+        uint256 _amount
+    ) public view returns (uint256[] memory) {
+        address[] memory path = new address[](2);
+        path[0] = _token;
+        path[1] = _weth;
+
+        return _router.getAmountsOut(_amount, path);
     }
 
     function playRaffle(address _token, uint256 _amount) external {

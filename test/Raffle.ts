@@ -239,29 +239,33 @@ describe("Advanced voting system", async () => {
 
       console.log(result, "RANDOM!!!");
     });
+    it.skip("Should get a liquidity of current pair", async () => {
+      const amounts: number[] = [1500, 1, 2000];
+
+      console.log(
+        await raffleContract.getLiquidity(tetherTokenAddress, amounts[1])
+      );
+    });
     it("Should proper work due to raffle-logic pipeline", async () => {
-      const amounts: number[] = [1500, 1000, 2000];
+      const amounts: number[] = [1500, 1000, 2000, 10];
 
-      // await chainlinkToken.approve(raffleContract, amounts[2]);
-      // await raffleContract.playRaffle(chainlinkTokenAddress, amounts[2]);
+      await uniswapToken
+        .connect(uniswapHolder)
+        .transfer(owner.address, amounts[0]);
 
-      // await tetherToken.transfer(user1.address, amounts[0]);
-      // await uniswapToken.transfer(user2.address, amounts[1]);
-      // await chainlinkToken.transfer(user3.address, amounts[2]);
+      await uniswapToken.connect(owner).approve(raffleContract, amounts[0]);
 
-      // expect(await tetherToken.balanceOf(user1.address)).to.equal(amounts[0]);
-
-      //await tetherToken.connect(usdtHolder).approve(raffleContract, amounts[0]);
       await uniswapToken
         .connect(uniswapHolder)
         .approve(raffleContract, amounts[1]);
+
       await chainlinkToken
         .connect(chainlinkHolder)
         .approve(raffleContract, amounts[2]);
 
-      // await raffleContract
-      //   .connect(usdtHolder)
-      //   .playRaffle(tetherTokenAddress, amounts[1]);
+      await raffleContract
+        .connect(owner)
+        .playRaffle(uniswapTokenAddress, amounts[0]);
 
       await raffleContract
         .connect(uniswapHolder)
@@ -271,20 +275,16 @@ describe("Advanced voting system", async () => {
         .connect(chainlinkHolder)
         .playRaffle(chainlinkToken, amounts[2]);
 
-      console.log(await wethToken.balanceOf(raffleContract));
-
       await raffleContract.endRaffle();
 
       const winnerAddress = await getProbableWinner(raffleContract, 1);
 
-      const isWinner: boolean = await raffleContract.verifyWinner(
+      const isWinner: boolean = await raffleContract.verifyAndTransfer(
         1,
         winnerAddress
       );
 
-      expect(isWinner).to.equal(true);
-
-      console.log(await raffleContract.rafflePotInWeth(1));
+      expect(await wethToken.balanceOf(winnerAddress)).to.be.gt(0);
     });
   });
 });
