@@ -72,7 +72,7 @@ describe("Advanced voting system", async () => {
   const chainlinkOracle: string = "0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c";
   const bnbOracle: string = "0x14e613AC84a31f709eadbdF89C6CC390fDc9540A";
 
-  const initSupply: bigint = BigInt(5 * 10 ** 18);
+  const initSupply: bigint = BigInt(1 * 10 ** 18);
 
   beforeEach(async () => {
     [owner, user1, user2, user3, user4, user5] = await ethers.getSigners();
@@ -247,17 +247,17 @@ describe("Advanced voting system", async () => {
       );
     });
     it("Should create a new liquidity pair between eth and test erc20", async () => {
-      await wethToken.connect(wetherHolder).transfer(owner, 10);
+      await wethToken.connect(wetherHolder).transfer(owner, 100000);
 
       await testErc20.connect(owner).approve(raffleContractAddress, initSupply);
 
-      await wethToken.connect(owner).approve(raffleContractAddress, 10);
+      await wethToken.connect(owner).approve(raffleContractAddress, 100000);
 
       await raffleContract.addLiquidity(
         wethTokenAddress,
         testErc20Address,
-        10,
-        initSupply / BigInt(5),
+        10000,
+        initSupply,
         0,
         0,
         owner.address,
@@ -265,7 +265,11 @@ describe("Advanced voting system", async () => {
       );
 
       console.log(
-        await raffleContract.getLiquidity(wethTokenAddress, testErc20, 1)
+        await raffleContract.getLiquidity(
+          testErc20,
+          wethTokenAddress,
+          9 * 10 ** 14
+        )
       );
     });
     it.skip("Should proper work due to raffle-logic pipeline", async () => {
