@@ -4,7 +4,11 @@ import { Uni__factory } from "./../typechain-types/factories/contracts/UniswapTe
 import { expect, use } from "chai";
 import { ethers, network } from "hardhat";
 
-import type { HardhatEthersSigner } from "../node_modules/@nomicfoundation/hardhat-ethers/signers.ts";
+import { setBalance } from "@nomicfoundation/hardhat-network-helpers";
+
+import getProbableWinner from "../helpers/ProbableWinner";
+
+import { HardhatEthersSigner } from "../node_modules/@nomicfoundation/hardhat-ethers/signers.js";
 import {
   BNB,
   LinkToken,
@@ -16,18 +20,25 @@ import {
   TetherToken,
   TetherToken__factory,
   Uni,
+  WETH9,
+  WETH9__factory,
 } from "../typechain-types/index.js";
 
 import { Raffle } from "./../typechain-types/contracts/Raffle";
 import exp from "constants";
 
-describe("Advanced voting system", () => {
+describe("Advanced voting system", async () => {
   let owner: HardhatEthersSigner,
     user1: HardhatEthersSigner,
     user2: HardhatEthersSigner,
     user3: HardhatEthersSigner,
     user4: HardhatEthersSigner,
-    user5: HardhatEthersSigner;
+    user5: HardhatEthersSigner,
+    usdtHolder: HardhatEthersSigner,
+    uniswapHolder: HardhatEthersSigner,
+    chainlinkHolder: HardhatEthersSigner,
+    bnbHolder: HardhatEthersSigner,
+    wetherHolder: HardhatEthersSigner;
 
   let randomNumberConsumer: RandomNumberConsumerV2;
   let randomNumberConsumerAddress: string;
@@ -39,26 +50,54 @@ describe("Advanced voting system", () => {
   let testErc20Address: string;
 
   let tetherToken: TetherToken;
-  let tetherTokenAddress: string;
+  const tetherTokenAddress: string =
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7";
 
   let uniswapToken: Uni;
-  let uniswapTokenAddress: string;
+  const uniswapTokenAddress: string =
+    "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
 
   let chainlinkToken: LinkToken;
-  let chainlinkTokenAddress: string;
+  const chainlinkTokenAddress: string =
+    "0x514910771AF9Ca656af840dff83E8264EcF986CA";
 
   let bnbToken: BNB;
-  let bnbTokenAddress: string;
+  const bnbTokenAddress: string = "0xB8c77482e45F1F44dE1745F52C74426C631bDD52";
 
-  let tetherOracle: string = "0x3E7d1eAB13ad0104d2750B8863b489D65364e32D";
-  let uniswapOracle: string = "0x553303d460EE0afB37EdFf9bE42922D8FF63220e";
-  let chainlinkOracle: string = "0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c";
-  let bnbOracle: string = "0x14e613AC84a31f709eadbdF89C6CC390fDc9540A";
+  let wethToken: WETH9;
+  const wethTokenAddress: string = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+
+  const tetherOracle: string = "0x3E7d1eAB13ad0104d2750B8863b489D65364e32D";
+  const uniswapOracle: string = "0x553303d460EE0afB37EdFf9bE42922D8FF63220e";
+  const chainlinkOracle: string = "0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c";
+  const bnbOracle: string = "0x14e613AC84a31f709eadbdF89C6CC390fDc9540A";
 
   const initSupply: number = 100000000000;
 
   beforeEach(async () => {
     [owner, user1, user2, user3, user4, user5] = await ethers.getSigners();
+
+    usdtHolder = await ethers.getImpersonatedSigner(
+      "0xaf64555ddd61fcf7d094824dd9b4ebea165afc5b"
+    );
+    uniswapHolder = await ethers.getImpersonatedSigner(
+      "0x47173b170c64d16393a52e6c480b3ad8c302ba1e"
+    );
+    chainlinkHolder = await ethers.getImpersonatedSigner(
+      "0x0757e27ac1631beeb37eed3270cc6301dd3d57d4"
+    );
+    bnbHolder = await ethers.getImpersonatedSigner(
+      "0x000000000000000000000000000000000000dead"
+    );
+    wetherHolder = await ethers.getImpersonatedSigner(
+      "0xF04a5cC80B1E94C69B48f5ee68a08CD2F09A7c3E"
+    );
+
+    await setBalance(usdtHolder.address, 100n ** 18n);
+    await setBalance(uniswapHolder.address, 100n ** 18n);
+    await setBalance(chainlinkHolder.address, 100n ** 18n);
+    await setBalance(bnbHolder.address, 100n ** 18n);
+    await setBalance(wetherHolder.address, 100n ** 18n);
 
     const RandomNumberConsumerFactory: RandomNumberConsumerV2__factory =
       await ethers.getContractFactory("RandomNumberConsumerV2");
@@ -86,39 +125,26 @@ describe("Advanced voting system", () => {
 
     const TetherTokenFactory: TetherToken__factory =
       await ethers.getContractFactory("TetherToken");
-    tetherToken = await TetherTokenFactory.deploy(
-      initSupply,
-      "Tether USD",
-      "USDT",
-      10 * 10 ** 6
-    );
-    tetherTokenAddress = await tetherToken.getAddress();
+    tetherToken = await TetherTokenFactory.attach(tetherTokenAddress);
 
     const UniswapTokenFactory: Uni__factory = await ethers.getContractFactory(
       "Uni"
     );
-    uniswapToken = await UniswapTokenFactory.deploy(
-      owner.address,
-      owner.address,
-      0
-    );
-    uniswapTokenAddress = await uniswapToken.getAddress();
+    uniswapToken = await UniswapTokenFactory.attach(uniswapTokenAddress);
 
     const ChainlinkTokenFactory: LinkToken__factory =
       await ethers.getContractFactory("LinkToken");
-    chainlinkToken = await ChainlinkTokenFactory.deploy();
-    chainlinkTokenAddress = await chainlinkToken.getAddress();
+    chainlinkToken = await ChainlinkTokenFactory.attach(chainlinkTokenAddress);
 
     const BNBTokenFactory: BNB__factory = await ethers.getContractFactory(
       "BNB"
     );
-    bnbToken = await BNBTokenFactory.deploy(
-      initSupply,
-      "BNB",
-      10 * 10 ** 8,
-      "BNB"
+    bnbToken = await BNBTokenFactory.attach(bnbTokenAddress);
+
+    const wethTokenFactory: WETH9__factory = await ethers.getContractFactory(
+      "WETH9"
     );
-    bnbTokenAddress = await bnbToken.getAddress();
+    wethToken = await wethTokenFactory.attach(wethTokenAddress);
 
     await raffleContract.manageTokensList(testErc20Address, false);
     await raffleContract.manageTokensList(tetherTokenAddress, true);
@@ -187,9 +213,13 @@ describe("Advanced voting system", () => {
       expect(result1).to.equal(BigInt(499999999999999999));
     });
     it.skip("Should deposit proper amount of allowed tokens on raffle contract", async () => {
-      await chainlinkToken.approve(raffleContractAddress, 100000);
+      await chainlinkToken
+        .connect(chainlinkHolder)
+        .approve(raffleContractAddress, 100000);
 
-      await raffleContract.playRaffle(chainlinkTokenAddress, 100000);
+      await raffleContract
+        .connect(chainlinkHolder)
+        .playRaffle(chainlinkTokenAddress, 100000);
 
       expect(await chainlinkToken.balanceOf(raffleContractAddress)).to.equal(
         100000
@@ -210,37 +240,51 @@ describe("Advanced voting system", () => {
       console.log(result, "RANDOM!!!");
     });
     it("Should proper work due to raffle-logic pipeline", async () => {
-      const amounts: number[] = [15, 3, 2];
+      const amounts: number[] = [1500, 1000, 2000];
 
-      await chainlinkToken.approve(raffleContract, amounts[2]);
-      await raffleContract.playRaffle(chainlinkTokenAddress, amounts[2]);
+      // await chainlinkToken.approve(raffleContract, amounts[2]);
+      // await raffleContract.playRaffle(chainlinkTokenAddress, amounts[2]);
 
-      await tetherToken.transfer(user1.address, amounts[0]);
-      await uniswapToken.transfer(user2.address, amounts[1]);
-      await chainlinkToken.transfer(user3.address, amounts[2]);
+      // await tetherToken.transfer(user1.address, amounts[0]);
+      // await uniswapToken.transfer(user2.address, amounts[1]);
+      // await chainlinkToken.transfer(user3.address, amounts[2]);
 
-      await tetherToken.connect(user1).approve(raffleContract, amounts[0]);
-      await uniswapToken.connect(user2).approve(raffleContract, amounts[1]);
-      await chainlinkToken.connect(user3).approve(raffleContract, amounts[2]);
+      // expect(await tetherToken.balanceOf(user1.address)).to.equal(amounts[0]);
+
+      //await tetherToken.connect(usdtHolder).approve(raffleContract, amounts[0]);
+      await uniswapToken
+        .connect(uniswapHolder)
+        .approve(raffleContract, amounts[1]);
+      await chainlinkToken
+        .connect(chainlinkHolder)
+        .approve(raffleContract, amounts[2]);
+
+      // await raffleContract
+      //   .connect(usdtHolder)
+      //   .playRaffle(tetherTokenAddress, amounts[1]);
 
       await raffleContract
-        .connect(user2)
+        .connect(uniswapHolder)
         .playRaffle(uniswapTokenAddress, amounts[1]);
+
       await raffleContract
-        .connect(user3)
+        .connect(chainlinkHolder)
         .playRaffle(chainlinkToken, amounts[2]);
+
+      console.log(await wethToken.balanceOf(raffleContract));
 
       await raffleContract.endRaffle();
 
-      const winnerNumber = await raffleContract.getWinnerNumber();
+      const winnerAddress = await getProbableWinner(raffleContract, 1);
 
-      const rafflePlayers = await raffleContract.getRafflePlayers(1);
+      const isWinner: boolean = await raffleContract.verifyWinner(
+        1,
+        winnerAddress
+      );
 
-      const winner = await raffleContract.verifyWinner(1, owner.address);
-      const winner1 = await raffleContract.verifyWinner(1, user2.address);
-      const winner2 = await raffleContract.verifyWinner(1, user3.address);
+      expect(isWinner).to.equal(true);
 
-      console.log(rafflePlayers, winnerNumber, winner, winner1, winner2);
+      console.log(await raffleContract.rafflePotInWeth(1));
     });
   });
 });

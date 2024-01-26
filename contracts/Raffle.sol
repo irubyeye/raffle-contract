@@ -40,6 +40,8 @@ contract Raffle is Ownable {
 
     address private _weth;
 
+    address public uniswapRouterAddress;
+
     RandomNumberConsumerV2 randomNumberConsumer;
     IUniswapV2Router02 private _router;
 
@@ -57,6 +59,7 @@ contract Raffle is Ownable {
         randomNumberConsumer = _consumer;
         _weth = _wethAddress;
         _router = IUniswapV2Router02(_uniSwapRouter);
+        uniswapRouterAddress = _uniSwapRouter;
     }
 
     modifier onlyAllowedTokens(address _token) {
@@ -151,13 +154,15 @@ contract Raffle is Ownable {
         path[0] = _token;
         path[1] = _weth;
 
-        // uint256 amountInWeth = _router.swapExactTokensForTokens(
-        //     _amount,
-        //     0,
-        //     path,
-        //     address(this),
-        //     block.timestamp + 60
-        // )[1];
+        IERC20(_token).approve(uniswapRouterAddress, _amount);
+
+        uint256 amountInWeth = _router.swapExactTokensForTokens(
+            _amount,
+            0,
+            path,
+            address(this),
+            block.timestamp + 600
+        )[1];
 
         Player memory rafflePlayer;
         rafflePlayer.playerAddress = msg.sender;
@@ -169,7 +174,8 @@ contract Raffle is Ownable {
         rafflePlayers[_raffleId].push(rafflePlayer);
 
         rafflePot[_raffleId] += usdAmount;
-        //rafflePotInWeth[_raffleId] += amountInWeth;
+
+        rafflePotInWeth[_raffleId] += amountInWeth;
     }
 
     function playRaffle(address _token, uint256 _amount) external {
