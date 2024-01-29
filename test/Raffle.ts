@@ -26,6 +26,8 @@ import {
 
 import { Raffle } from "./../typechain-types/contracts/Raffle";
 import exp from "constants";
+import BigNumber from "bignumber.js";
+BigNumber.set({ DECIMAL_PLACES: 8 });
 
 describe("Advanced voting system", async () => {
   let owner: HardhatEthersSigner,
@@ -212,6 +214,11 @@ describe("Advanced voting system", async () => {
 
       expect(result1).to.equal(BigInt(499999999999999999));
     });
+    it.skip("Should pass all deposit scenarios and calculate range", async () => {
+      const range = await raffleContract.calculateRange(1, 1000);
+
+      console.log(range);
+    });
     it.skip("Should deposit proper amount of allowed tokens on raffle contract", async () => {
       await chainlinkToken
         .connect(chainlinkHolder)
@@ -239,14 +246,26 @@ describe("Advanced voting system", async () => {
 
       console.log(result, "RANDOM!!!");
     });
-    it.skip("Should get a liquidity of current pair", async () => {
+    it.skip("Should get a liquidity of current pair with proper parsing", async () => {
       const amounts: number[] = [1500, 1, 2000];
 
-      console.log(
-        await raffleContract.getLiquidity(tetherTokenAddress, amounts[1])
+      const bigNumber: bigint = BigInt(amounts[1]) * BigInt(10) ** BigInt(18);
+
+      const liquidityArr = await raffleContract.getLiquidity(
+        wethToken,
+        uniswapToken,
+        bigNumber
       );
+
+      const number = new BigNumber(liquidityArr[1].toString());
+
+      const number1 = new BigNumber(1000000000000000000);
+
+      const properView = number.div(new BigNumber(10).pow(18));
+
+      console.log(properView.toNumber());
     });
-    it("Should create a new liquidity pair between eth and test erc20", async () => {
+    it.skip("Should create a new liquidity pair between eth and test erc20", async () => {
       await wethToken.connect(wetherHolder).transfer(owner, 100000);
 
       await testErc20.connect(owner).approve(raffleContractAddress, initSupply);
@@ -272,34 +291,38 @@ describe("Advanced voting system", async () => {
         )
       );
     });
-    it.skip("Should proper work due to raffle-logic pipeline", async () => {
-      const amounts: number[] = [1500, 1000, 2000, 10];
+    it("Should proper work due to raffle-logic pipeline", async () => {
+      const amounts: number[] = [10, 15, 20, 10];
+
+      const bigNumber: bigint = BigInt(10) ** BigInt(18);
 
       await uniswapToken
         .connect(uniswapHolder)
-        .transfer(owner.address, amounts[0]);
+        .transfer(owner.address, BigInt(amounts[0]) * bigNumber);
 
-      await uniswapToken.connect(owner).approve(raffleContract, amounts[0]);
+      await uniswapToken
+        .connect(owner)
+        .approve(raffleContract, BigInt(amounts[0]) * bigNumber);
 
       await uniswapToken
         .connect(uniswapHolder)
-        .approve(raffleContract, amounts[1]);
+        .approve(raffleContract, BigInt(amounts[1]) * bigNumber);
 
       await chainlinkToken
         .connect(chainlinkHolder)
-        .approve(raffleContract, amounts[2]);
+        .approve(raffleContract, BigInt(amounts[2]) * bigNumber);
 
       await raffleContract
         .connect(owner)
-        .playRaffle(uniswapTokenAddress, amounts[0]);
+        .playRaffle(uniswapTokenAddress, BigInt(amounts[0]) * bigNumber);
 
       await raffleContract
         .connect(uniswapHolder)
-        .playRaffle(uniswapTokenAddress, amounts[1]);
+        .playRaffle(uniswapTokenAddress, BigInt(amounts[1]) * bigNumber);
 
       await raffleContract
         .connect(chainlinkHolder)
-        .playRaffle(chainlinkToken, amounts[2]);
+        .playRaffle(chainlinkToken, BigInt(amounts[2]) * bigNumber);
 
       await raffleContract.endRaffle();
 
@@ -309,6 +332,14 @@ describe("Advanced voting system", async () => {
         1,
         winnerAddress
       );
+
+      const rafflePotInWeth: bigint = await raffleContract.rafflePotInWeth(1);
+
+      const number = new BigNumber(rafflePotInWeth.toString());
+
+      const properView = number.div(new BigNumber(10).pow(18));
+
+      console.log(properView.toNumber());
 
       expect(await wethToken.balanceOf(winnerAddress)).to.be.gt(0);
     });

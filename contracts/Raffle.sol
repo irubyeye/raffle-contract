@@ -34,6 +34,12 @@ contract Raffle is Ownable {
 
     uint256 public raffleId;
 
+    uint256 public x;
+
+    uint256 public y;
+
+    uint256 public z;
+
     uint256 public constant DECIMALS = 18;
 
     uint256 public constant RANDOM_MAX_RANGE = 999999999999999999;
@@ -41,6 +47,8 @@ contract Raffle is Ownable {
     address private _weth;
 
     address public uniswapRouterAddress;
+
+    address public founder;
 
     RandomNumberConsumerV2 randomNumberConsumer;
     IUniswapV2Router02 private _router;
@@ -50,6 +58,8 @@ contract Raffle is Ownable {
         uint256 playerBet;
         uint256 prevDepSum;
     }
+
+    uint256[30] private _gap;
 
     constructor(
         RandomNumberConsumerV2 _consumer,
@@ -289,9 +299,7 @@ contract Raffle is Ownable {
 
         uint256 depositPerc = percCalc(_deposit, _totalBalance);
 
-        uint256 coef = RANDOM_MAX_RANGE;
-
-        uint256 range = depositPerc * coef;
+        uint256 range = depositPerc * RANDOM_MAX_RANGE;
 
         return range / (10 ** DECIMALS);
     }
