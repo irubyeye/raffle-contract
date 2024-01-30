@@ -7,7 +7,7 @@ contract TransparentProxy is Ownable {
     address public implementation;
     address public admin;
 
-    constructor(address _implementation, address _admin) Ownable(msg.sender) {
+    constructor(address _implementation, address _admin) Ownable() {
         implementation = _implementation;
         admin = _admin;
     }

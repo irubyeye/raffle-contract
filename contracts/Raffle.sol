@@ -65,7 +65,7 @@ contract Raffle is Ownable {
         RandomNumberConsumerV2 _consumer,
         address _wethAddress,
         address _uniSwapRouter
-    ) Ownable(msg.sender) {
+    ) Ownable() {
         randomNumberConsumer = _consumer;
         _weth = _wethAddress;
         _router = IUniswapV2Router02(_uniSwapRouter);

@@ -101,15 +101,6 @@ describe("Advanced voting system", async () => {
     await setBalance(bnbHolder.address, 100n ** 18n);
     await setBalance(wetherHolder.address, 100n ** 18n);
 
-    const RandomNumberConsumerFactory: RandomNumberConsumerV2__factory =
-      await ethers.getContractFactory("RandomNumberConsumerV2");
-    randomNumberConsumer = await RandomNumberConsumerFactory.deploy(
-      8801,
-      "0x8103b0a8a00be2ddc778e6e7eaa21791cd364625",
-      "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c"
-    );
-    randomNumberConsumerAddress = await randomNumberConsumer.getAddress();
-
     const RaffleFactory: Raffle__factory = await ethers.getContractFactory(
       "Raffle"
     );
