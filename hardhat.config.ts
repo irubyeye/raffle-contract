@@ -1,4 +1,9 @@
 import "@nomicfoundation/hardhat-toolbox";
+import "@nomicfoundation/hardhat-ethers";
+import "hardhat-deploy";
+import "@typechain/hardhat";
+
+import { HardhatUserConfig } from "hardhat/types";
 
 require("dotenv").config();
 
@@ -11,28 +16,77 @@ if (COVERAGE) {
   require("solidity-coverage");
 }
 
-require("./tasks/deploy");
-
-module.exports = {
+const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   solidity: {
     compilers: [
-      { version: "0.8.2" },
-      { version: "0.8.23" },
-      { version: "0.4.17" },
-      { version: "0.5.16" },
-      { version: "0.4.18" },
+      {
+        version: "0.8.2",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1000,
+          },
+        },
+      },
+      {
+        version: "0.8.23",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1000,
+          },
+        },
+      },
+      {
+        version: "0.4.17",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1000,
+          },
+        },
+      },
+      {
+        version: "0.5.16",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1000,
+          },
+        },
+      },
+      {
+        version: "0.4.18",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1000,
+          },
+        },
+      },
     ],
+  },
+  namedAccounts: {
+    deployer: { default: 0 },
   },
   networks: {
     sepolia: {
       url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
       accounts: [SEPOLIA_PRIVATE_KEY],
     },
+    // hardhat: {
+    //   forking: {
+    //     url: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+    //   },
+    // },
     hardhat: {
-      forking: {
-        url: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-      },
+      chainId: 31337,
+      allowUnlimitedContractSize: true,
+    },
+    localhost: {
+      chainId: 31337,
+      allowUnlimitedContractSize: true,
     },
   },
   gasReporter: {
@@ -40,3 +94,5 @@ module.exports = {
     currency: "USD",
   },
 };
+
+export default config;

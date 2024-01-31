@@ -30,6 +30,8 @@ contract Raffle is Ownable {
 
     mapping(uint256 => bool) public isPotTransfered;
 
+    mapping(address => bool) public isAdmin;
+
     mapping(address => mapping(uint256 => uint256)) public userPosInRaffle;
 
     uint256 public raffleId;
@@ -70,11 +72,21 @@ contract Raffle is Ownable {
         _weth = _wethAddress;
         _router = IUniswapV2Router02(_uniSwapRouter);
         uniswapRouterAddress = _uniSwapRouter;
+        isAdmin[msg.sender] = true;
     }
 
     modifier onlyAllowedTokens(address _token) {
         require(allowedTokens[_token], "Token is not supported!");
         _;
+    }
+
+    modifier onlyAdmin() {
+        require(isAdmin[msg.sender], "Only admin can perform this!");
+        _;
+    }
+
+    function manageAdmins(address _user, bool _status) external onlyAdmin {
+        isAdmin[_user] = _status;
     }
 
     function manageTokensList(
@@ -88,6 +100,15 @@ contract Raffle is Ownable {
         address _token,
         address _dataFeed
     ) external onlyOwner {
+        currencyOracle[_token] = _dataFeed;
+    }
+
+    function manageTokenAndOracle(
+        address _token,
+        address _dataFeed,
+        bool _isAllowed
+    ) external onlyOwner {
+        allowedTokens[_token] = _isAllowed;
         currencyOracle[_token] = _dataFeed;
     }
 
@@ -262,7 +283,7 @@ contract Raffle is Ownable {
         isPlayed[msg.sender] = raffleId;
     }
 
-    function endRaffle() external onlyOwner {
+    function endRaffle() external onlyAdmin {
         raffleWinnerNumber[raffleId] =
             (getRandomNumber() % (10 ** DECIMALS)) +
             1;
@@ -273,7 +294,7 @@ contract Raffle is Ownable {
     function verifyAndTransfer(
         uint256 _raffleId,
         address _supposedWinner
-    ) external onlyOwner {
+    ) external onlyAdmin {
         require(isPotTransfered[raffleId] == false, "Already transfered pot!");
 
         require(verifyWinner(_raffleId, _supposedWinner), "Wrong player!");
@@ -341,13 +362,8 @@ contract Raffle is Ownable {
 
         uint256 checkedRaffleWinnerNumber = raffleWinnerNumber[_raffleId];
 
-        if (
+        return
             checkedRaffleWinnerNumber > prevPlayersRange &&
-            checkedRaffleWinnerNumber < maxPlayerDiapason
-        ) {
-            return true;
-        } else {
-            return false;
-        }
+            checkedRaffleWinnerNumber < maxPlayerDiapason;
     }
 }

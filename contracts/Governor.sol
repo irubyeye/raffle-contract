@@ -1,45 +1,69 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/governance/Governor.sol";
-import "@openzeppelin/contracts/governance/compatibility/GovernorCompatibilityBravo.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 
 contract MyGovernor is
     Governor,
-    GovernorCompatibilityBravo,
+    GovernorSettings,
+    GovernorCountingSimple,
     GovernorVotes,
     GovernorVotesQuorumFraction,
     GovernorTimelockControl
 {
     constructor(
         IVotes _token,
-        TimelockController _timelock
+        TimelockController _timelock,
+        uint256 _quorumPercentage,
+        uint256 _votingPeriod,
+        uint256 _votingDelay
     )
-        Governor("MyGovernor")
+        Governor("GovernorContract")
+        GovernorSettings(_votingDelay, _votingPeriod, 0)
         GovernorVotes(_token)
-        GovernorVotesQuorumFraction(4)
+        GovernorVotesQuorumFraction(_quorumPercentage)
         GovernorTimelockControl(_timelock)
     {}
 
-    function votingDelay() public pure virtual override returns (uint256) {
-        return 1 days;
-    }
-
-    function votingPeriod() public pure virtual override returns (uint256) {
-        return 1 weeks;
-    }
-
-    function proposalThreshold()
+    function votingDelay()
         public
-        pure
-        virtual
-        override
+        view
+        override(IGovernor, GovernorSettings)
         returns (uint256)
     {
-        return 0;
+        return super.votingDelay();
+    }
+
+    function votingPeriod()
+        public
+        view
+        override(IGovernor, GovernorSettings)
+        returns (uint256)
+    {
+        return super.votingPeriod();
+    }
+
+    function quorum(
+        uint256 blockNumber
+    )
+        public
+        view
+        override(IGovernor, GovernorVotesQuorumFraction)
+        returns (uint256)
+    {
+        return super.quorum(blockNumber);
+    }
+
+    function getVotes(
+        address account,
+        uint256 blockNumber
+    ) public view override(IGovernor, Governor) returns (uint256) {
+        return super.getVotes(account, blockNumber);
     }
 
     function state(
@@ -47,7 +71,7 @@ contract MyGovernor is
     )
         public
         view
-        override(Governor, IGovernor, GovernorTimelockControl)
+        override(Governor, GovernorTimelockControl)
         returns (ProposalState)
     {
         return super.state(proposalId);
@@ -58,25 +82,17 @@ contract MyGovernor is
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
-    )
-        public
-        override(Governor, GovernorCompatibilityBravo, IGovernor)
-        returns (uint256)
-    {
+    ) public override(Governor, IGovernor) returns (uint256) {
         return super.propose(targets, values, calldatas, description);
     }
 
-    function cancel(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        bytes32 descriptionHash
-    )
+    function proposalThreshold()
         public
-        override(Governor, GovernorCompatibilityBravo, IGovernor)
+        view
+        override(Governor, GovernorSettings)
         returns (uint256)
     {
-        return super.cancel(targets, values, calldatas, descriptionHash);
+        return super.proposalThreshold();
     }
 
     function _execute(
@@ -109,12 +125,7 @@ contract MyGovernor is
 
     function supportsInterface(
         bytes4 interfaceId
-    )
-        public
-        view
-        override(Governor, IERC165, GovernorTimelockControl)
-        returns (bool)
-    {
+    ) public view override(Governor, GovernorTimelockControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }
