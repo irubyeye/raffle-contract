@@ -26,6 +26,8 @@ contract Raffle is Ownable {
 
     mapping(uint256 => uint256) public raffleWinnerNumber;
 
+    mapping(uint256 => uint256) public requestIdForRaffle;
+
     mapping(uint256 => address) public raffleWinner;
 
     mapping(uint256 => bool) public isPotTransfered;
@@ -73,6 +75,7 @@ contract Raffle is Ownable {
         _router = IUniswapV2Router02(_uniSwapRouter);
         uniswapRouterAddress = _uniSwapRouter;
         isAdmin[msg.sender] = true;
+        isPotTransfered[raffleId] = true;
     }
 
     modifier onlyAllowedTokens(address _token) {
@@ -150,10 +153,7 @@ contract Raffle is Ownable {
         return raffleWinnerNumber[raffleId];
     }
 
-    function getRandomNumber() public view returns (uint256) {
-        // randomNumberConsumer.requestRandomWords();
-        // return randomNumberConsumer.randomNumber();
-
+    function getRandomNumber() public returns (uint256) {
         return
             uint256(
                 keccak256(
@@ -163,6 +163,11 @@ contract Raffle is Ownable {
                     )
                 )
             );
+    }
+
+    function requestRandomNumber() internal onlyAdmin {
+        requestIdForRaffle[raffleId] = randomNumberConsumer
+            .requestRandomWords();
     }
 
     function deposite(
@@ -262,10 +267,10 @@ contract Raffle is Ownable {
 
     function playRaffle(address _token, uint256 _amount) external {
         if (!isRaffleInProcess[raffleId]) {
-            // require(
-            //     isPotTransfered[raffleId],
-            //     "Cannot start new raffle before previous winner hasn't receive pot!"
-            // );
+            require(
+                isPotTransfered[raffleId],
+                "Cannot start new raffle before previous winner hasn't receive pot!"
+            );
 
             raffleId++;
             isRaffleInProcess[raffleId] = true;
@@ -284,10 +289,7 @@ contract Raffle is Ownable {
     }
 
     function endRaffle() external onlyAdmin {
-        raffleWinnerNumber[raffleId] =
-            (getRandomNumber() % (10 ** DECIMALS)) +
-            1;
-
+        requestRandomNumber();
         isRaffleInProcess[raffleId] = false;
     }
 
@@ -329,6 +331,11 @@ contract Raffle is Ownable {
         uint256 _raffleId,
         address _supposedWinner
     ) public view returns (bool) {
+        (bool isGenerated, uint256[] memory randNumber) = randomNumberConsumer
+            .getRequestStatus(requestIdForRaffle[raffleId]);
+
+        require(isGenerated, "Random number is not received yet!");
+
         uint256 supposedWinnerRafflePos = userPosInRaffle[_supposedWinner][
             _raffleId
         ];
@@ -360,10 +367,10 @@ contract Raffle is Ownable {
 
         uint256 maxPlayerDiapason = prevPlayersRange + currPlayerRange;
 
-        uint256 checkedRaffleWinnerNumber = raffleWinnerNumber[_raffleId];
+        uint256 checkedRaffleWinnerNumber = randNumber[0];
 
         return
             checkedRaffleWinnerNumber > prevPlayersRange &&
-            checkedRaffleWinnerNumber < maxPlayerDiapason;
+            checkedRaffleWinnerNumber <= maxPlayerDiapason;
     }
 }
