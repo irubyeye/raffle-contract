@@ -3,6 +3,10 @@ import "@nomicfoundation/hardhat-ethers";
 import "hardhat-deploy";
 import "@typechain/hardhat";
 
+import "@nomicfoundation/hardhat-chai-matchers";
+import "hardhat-gas-reporter";
+import "solidity-coverage";
+
 import { HardhatUserConfig } from "hardhat/types";
 
 require("dotenv").config();

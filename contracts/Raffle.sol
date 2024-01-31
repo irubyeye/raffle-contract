@@ -52,7 +52,7 @@ contract Raffle is Ownable {
 
     address public founder;
 
-    RandomNumberConsumerV2 randomNumberConsumer;
+    VRFv2Consumer randomNumberConsumer;
     IUniswapV2Router02 private _router;
 
     struct Player {
@@ -64,7 +64,7 @@ contract Raffle is Ownable {
     uint256[30] private _gap;
 
     constructor(
-        RandomNumberConsumerV2 _consumer,
+        VRFv2Consumer _consumer,
         address _wethAddress,
         address _uniSwapRouter
     ) Ownable() {
