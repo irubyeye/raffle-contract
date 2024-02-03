@@ -15,6 +15,7 @@ const INFURA_API_KEY: string = process.env.INFURA_API_KEY || "";
 const SEPOLIA_PRIVATE_KEY: string = process.env.SEPOLIA_PRIVATE_KEY || "";
 const ALCHEMY_API_KEY: string = process.env.ALCHEMY_API_KEY || "";
 const COVERAGE = process.env.COVERAGE === "true";
+const ETHERSCAN_API_KEY: string = process.env.ETHERSCAN_API_KEY || "";
 
 if (COVERAGE) {
   require("solidity-coverage");
@@ -96,6 +97,11 @@ const config: HardhatUserConfig = {
   gasReporter: {
     enabled: false,
     currency: "USD",
+  },
+  etherscan: {
+    apiKey: {
+      sepolia: ETHERSCAN_API_KEY,
+    },
   },
 };
 

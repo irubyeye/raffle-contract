@@ -24,8 +24,6 @@ contract Raffle is Ownable {
 
     mapping(address => uint256) public isPlayed;
 
-    mapping(uint256 => uint256) public raffleWinnerNumber;
-
     mapping(uint256 => uint256) public requestIdForRaffle;
 
     mapping(uint256 => address) public raffleWinner;
@@ -38,32 +36,23 @@ contract Raffle is Ownable {
 
     uint256 public raffleId;
 
-    uint256 public x;
-
-    uint256 public y;
-
-    uint256 public z;
-
     uint256 public constant DECIMALS = 18;
 
     uint256 public constant RANDOM_MAX_RANGE = 999999999999999999;
 
-    address private _weth;
+    address public _weth;
 
     address public uniswapRouterAddress;
 
-    address public founder;
-
     VRFv2Consumer randomNumberConsumer;
-    IUniswapV2Router02 private _router;
+
+    IUniswapV2Router02 public _router;
 
     struct Player {
         address playerAddress;
         uint256 playerBet;
         uint256 prevDepSum;
     }
-
-    uint256[30] private _gap;
 
     constructor(
         VRFv2Consumer _consumer,
@@ -92,17 +81,30 @@ contract Raffle is Ownable {
         isAdmin[_user] = _status;
     }
 
+    function manageVrfRandom(VRFv2Consumer _consumer) external onlyAdmin {
+        randomNumberConsumer = _consumer;
+    }
+
+    function manageUniswap(address _uniSwapRouter) external onlyAdmin {
+        _router = IUniswapV2Router02(_uniSwapRouter);
+        uniswapRouterAddress = _uniSwapRouter;
+    }
+
+    function manageWeth(address _wethToken) external onlyAdmin {
+        _weth = _wethToken;
+    }
+
     function manageTokensList(
         address _token,
         bool _isAllowed
-    ) external onlyOwner {
+    ) external onlyAdmin {
         allowedTokens[_token] = _isAllowed;
     }
 
     function manageCurrencyOracle(
         address _token,
         address _dataFeed
-    ) external onlyOwner {
+    ) external onlyAdmin {
         currencyOracle[_token] = _dataFeed;
     }
 
@@ -147,22 +149,6 @@ contract Raffle is Ownable {
 
     function getTokenOracle(address _token) external view returns (address) {
         return currencyOracle[_token];
-    }
-
-    function getWinnerNumber() public view returns (uint256) {
-        return raffleWinnerNumber[raffleId];
-    }
-
-    function getRandomNumber() public returns (uint256) {
-        return
-            uint256(
-                keccak256(
-                    abi.encodePacked(
-                        blockhash(block.number - 1),
-                        block.timestamp
-                    )
-                )
-            );
     }
 
     function requestRandomNumber() internal onlyAdmin {
@@ -269,7 +255,7 @@ contract Raffle is Ownable {
         if (!isRaffleInProcess[raffleId]) {
             require(
                 isPotTransfered[raffleId],
-                "Cannot start new raffle before previous winner hasn't receive pot!"
+                "Cannot start new raffle before previous winner hasn't received pot!"
             );
 
             raffleId++;
@@ -289,7 +275,9 @@ contract Raffle is Ownable {
     }
 
     function endRaffle() external onlyAdmin {
-        requestRandomNumber();
+        require(isRaffleInProcess[raffleId], "This raffle is ended!");
+        requestIdForRaffle[raffleId] = randomNumberConsumer
+            .requestRandomWords();
         isRaffleInProcess[raffleId] = false;
     }
 
@@ -334,7 +322,7 @@ contract Raffle is Ownable {
         (bool isGenerated, uint256[] memory randNumber) = randomNumberConsumer
             .getRequestStatus(requestIdForRaffle[raffleId]);
 
-        require(isGenerated, "Random number is not received yet!");
+        require(isGenerated, "Random number has not received yet!");
 
         uint256 supposedWinnerRafflePos = userPosInRaffle[_supposedWinner][
             _raffleId
@@ -367,7 +355,7 @@ contract Raffle is Ownable {
 
         uint256 maxPlayerDiapason = prevPlayersRange + currPlayerRange;
 
-        uint256 checkedRaffleWinnerNumber = randNumber[0];
+        uint256 checkedRaffleWinnerNumber = randNumber[0] % (10**DECIMALS);
 
         return
             checkedRaffleWinnerNumber > prevPlayersRange &&

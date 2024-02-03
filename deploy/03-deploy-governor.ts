@@ -12,36 +12,29 @@ import {
 const deployGovernorContract: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment
 ) {
-  // @ts-ignore
-  const { getNamedAccounts, deployments, network } = hre;
-  const { deploy, log, get } = deployments;
-  const { deployer } = await getNamedAccounts();
-  const raffleToken = await get("MyToken");
-  const timeLock = await get("TimeLock");
-  const args = [
-    raffleToken.address,
-    timeLock.address,
-    QUORUM_PERCENTAGE,
-    VOTING_PERIOD,
-    VOTING_DELAY,
-  ];
-
-  log("----------------------------------------------------");
-  log("Deploying GovernorContract and waiting for confirmations...");
-  const governorContract = await deploy("MyGovernor", {
-    from: deployer,
-    args,
-    log: true,
-    waitConfirmations: networkConfig[network.name].blockConfirmations || 1,
-  });
-  log(`GovernorContract at ${governorContract.address}`);
-  if (
-    !developmentChains.includes(network.name) &&
-    process.env.ETHERSCAN_API_KEY
-  ) {
-    await verify(governorContract.address, args);
-  }
+  // // @ts-ignore
+  // const { getNamedAccounts, deployments, network } = hre;
+  // const { deploy, log, get } = deployments;
+  // const { deployer } = await getNamedAccounts();
+  // const raffleToken = await get("MyToken");
+  // const timeLock = await get("TimeLock");
+  // const args = [
+  //   raffleToken.address,
+  //   timeLock.address,
+  //   QUORUM_PERCENTAGE,
+  //   VOTING_PERIOD,
+  //   VOTING_DELAY,
+  // ];
+  // log("----------------------------------------------------");
+  // log("Deploying GovernorContract and waiting for confirmations...");
+  // const governorContract = await deploy("MyGovernor", {
+  //   from: deployer,
+  //   args,
+  //   log: true,
+  //   waitConfirmations: networkConfig[network.name].blockConfirmations || 1,
+  // });
+  // log(`GovernorContract at ${governorContract.address}`);
 };
 
 export default deployGovernorContract;
-deployGovernorContract.tags = ["all", "governor"];
+//deployGovernorContract.tags = ["all", "governor"];

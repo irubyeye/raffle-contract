@@ -50,7 +50,6 @@ describe("Governor Flow", async () => {
   });
 
   it("proposes, votes, waits, queues, and then executes", async () => {
-    // propose
     const functionCallManageTokenAndOracle =
       raffle.interface.encodeFunctionData("manageTokenAndOracle", [
         "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F",
@@ -73,7 +72,7 @@ describe("Governor Flow", async () => {
     console.log(`Current Proposal State: ${proposalState}`);
 
     await moveBlocks(VOTING_DELAY + 1);
-    // vote
+
     const voteTx = await governor.castVoteWithReason(
       proposalId,
       voteWay,
@@ -85,8 +84,6 @@ describe("Governor Flow", async () => {
     console.log(`Current Proposal State: ${proposalState}`);
     await moveBlocks(VOTING_PERIOD + 1);
 
-    // queue & execute
-    // const descriptionHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PROPOSAL_DESCRIPTION))
     const descriptionHash = ethers.id(PROPOSAL_DESCRIPTION);
     const queueTx = await governor.queue(
       [raffleAddress],
