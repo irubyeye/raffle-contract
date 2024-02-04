@@ -281,6 +281,10 @@ contract Raffle is Ownable {
         isRaffleInProcess[raffleId] = false;
     }
 
+    function acceptingOwnership() external onlyAdmin{
+        randomNumberConsumer.acceptOwnership();
+    }
+
     function verifyAndTransfer(
         uint256 _raffleId,
         address _supposedWinner

@@ -37,13 +37,29 @@ const deployRaffle: DeployFunction = async function (
     "Raffle",
     raffleContract.address
   );
+  const vrfRand = await ethers.getContractAt(
+    "VRFv2Consumer",
+    "0x8b56001485d5d47A97f1B7b53b3B3734bA3b2FBD"
+  );
   //const timeLock = await get("TimeLock");
   const transferTx = await raffleContractEx.transferOwnership(
     "0xD26A862C2B5D9D20a6041158b960709719284706"
   );
   await transferTx.wait(1);
+
+  const transferToRaffleTx = await vrfRand.transferOwnership(
+    raffleContract.address
+  );
+  await transferToRaffleTx.wait();
+
+  const acceptOwnerTx = await raffleContractEx.acceptingOwnership();
+  await acceptOwnerTx.wait();
+
+  const vrfOwner = await vrfRand.owner();
+
   log("----------------------------------------------------");
   log(`Deployer address: ${deployer}`);
+  log(`Vrf owner: ${vrfOwner}`);
 };
 
 export default deployRaffle;
