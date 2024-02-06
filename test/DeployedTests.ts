@@ -69,6 +69,8 @@ describe("Governor Flow", async () => {
     const proposalId = proposeReceipt?.logs![0].args!.proposalId;
 
     let proposalState = await governor.state(proposalId);
+
+    console.log(proposeReceipt?.logs);
     console.log(`Current Proposal State: ${proposalState}`);
 
     await moveBlocks(VOTING_DELAY + 1);
@@ -85,6 +87,7 @@ describe("Governor Flow", async () => {
     await moveBlocks(VOTING_PERIOD + 1);
 
     const descriptionHash = ethers.id(PROPOSAL_DESCRIPTION);
+    console.log(descriptionHash);
     const queueTx = await governor.queue(
       [raffleAddress],
       [0],

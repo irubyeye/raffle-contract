@@ -19,7 +19,7 @@ export const developmentChains = ["hardhat", "localhost"];
 export const proposalsFile = "proposals.json";
 
 export const QUORUM_PERCENTAGE = 4;
-export const MIN_DELAY = 3600;
+export const MIN_DELAY = 60;
 
 export const VOTING_PERIOD = 5;
 export const VOTING_DELAY = 1;
